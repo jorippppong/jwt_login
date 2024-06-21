@@ -2,11 +2,8 @@ package com.jwtLogin.global.file;
 
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,14 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 
 @Service
@@ -29,7 +20,6 @@ import java.util.UUID;
 @Transactional
 @Slf4j
 public class AwsFileService {
-    private final AmazonS3Client amazonS3Client;
     private final AmazonS3 amazonS3;
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
@@ -44,24 +34,28 @@ public class AwsFileService {
 
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentLength(file.getSize());
-        metadata.setContentType(file.getContentType());
+
+        // 파일 확장자를 기반으로 ContentType 설정
+        String fileExtension = getFileExtension(file.getOriginalFilename());
+        String contentType = getContentType(fileExtension);
+        metadata.setContentType(contentType);
 
         try {
             amazonS3.putObject(bucket, randomFilename, file.getInputStream(), metadata);
         } catch (AmazonS3Exception e) {
             log.error("Amazon S3 error while uploading file: " + e.getMessage());
-            throw new RuntimeException("fail upload 1");
+            throw new RuntimeException("fail upload");
         } catch (SdkClientException e) {
             log.error("AWS SDK client error while uploading file: " + e.getMessage());
-            throw new RuntimeException("fail upload 2");
+            throw new RuntimeException("fail upload");
         } catch (IOException e) {
             log.error("IO error while uploading file: " + e.getMessage());
-            throw new RuntimeException("fail upload 3");
+            throw new RuntimeException("fail upload");
         }
 
         log.info("File upload completed: " + randomFilename);
 
-        return amazonS3.getUrl(bucket, PROFILE_IMG_DIR+"/"+randomFilename).toString();
+        return amazonS3.getUrl(bucket, randomFilename).toString();
     }
 
     // 랜덤파일명 생성 (파일명 중복 방지)
@@ -83,9 +77,20 @@ public class AwsFileService {
         return fileExtension;
     }
 
+    // 파일 확장자를 추출하는 메소드
+    private String getFileExtension(String filename) {
+        return filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
+    }
 
-    public void createDir(String bucketName, String folderName){
-        amazonS3Client.putObject(bucketName, folderName+"/", new ByteArrayInputStream(new byte[0]), new ObjectMetadata());
+    // 파일 확장자에 따른 ContentType을 반환하는 메소드
+    private String getContentType(String fileExtension) {
+        Map<String, String> contentTypeMap = new HashMap<>();
+        contentTypeMap.put("jpg", "image/jpeg");
+        contentTypeMap.put("jpeg", "image/jpeg");
+        contentTypeMap.put("png", "image/png");
+        contentTypeMap.put("gif", "image/gif");
+
+        return contentTypeMap.getOrDefault(fileExtension, "application/octet-stream");
     }
 
 }

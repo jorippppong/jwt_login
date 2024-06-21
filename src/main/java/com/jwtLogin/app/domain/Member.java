@@ -23,7 +23,10 @@ public class Member {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private LoginType status;
+    private LoginType loginType;
+
+    @Enumerated(EnumType.STRING)
+    private Authority authority;
 
     private String profileImageUrl;
 }

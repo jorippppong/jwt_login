@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth")
@@ -20,7 +22,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse.SignUpDTO> signup(
             @Valid @RequestPart("data") AuthRequest.signUpDTO data,
             @RequestPart("profileImage") MultipartFile profileImage
-    ){
+    ) throws IOException {
         Member member = authService.signup(data, profileImage);
         return ResponseEntity.ok(
                 AuthResponse.SignUpDTO.builder()

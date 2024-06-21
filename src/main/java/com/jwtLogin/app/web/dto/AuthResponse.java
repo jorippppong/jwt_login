@@ -9,5 +9,7 @@ public class AuthResponse {
     @Builder
     public static class SignUpDTO{
         private Long memberId;
+        private String nickname;
+        private String profileImageUrl;
     }
 }

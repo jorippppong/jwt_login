@@ -1,5 +1,6 @@
 package com.jwtLogin.app.web.controller;
 
+import com.jwtLogin.app.domain.Member;
 import com.jwtLogin.app.service.AuthService;
 import com.jwtLogin.app.web.dto.AuthRequest;
 import com.jwtLogin.app.web.dto.AuthResponse;
@@ -20,9 +21,12 @@ public class AuthController {
             @Valid @RequestPart("data") AuthRequest.signUpDTO data,
             @RequestPart("profileImage") MultipartFile profileImage
     ){
+        Member member = authService.signup(data, profileImage);
         return ResponseEntity.ok(
                 AuthResponse.SignUpDTO.builder()
-                        .memberId(authService.signup(data, profileImage))
+                        .memberId(member.getId())
+                        .nickname(member.getNickname())
+                        .profileImageUrl(member.getProfileImageUrl())
                         .build());
     }
 
